@@ -1,0 +1,16 @@
+{
+  "name": "driveline",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild js/app.js --bundle --minify --format=esm --outfile=dist/app.bundle.js && javascript-obfuscator dist/app.bundle.js --output dist/app.bundle.obf.js --config obfuscator.config.json",
+    "dev": "esbuild js/app.js --bundle --format=esm --sourcemap --outfile=dist/app.bundle.js --watch --servedir=.",
+    "postbuild": "node scripts/discord-notify.js --window-minutes=30",
+    "notify": "node scripts/discord-notify.js --window-minutes=30"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "javascript-obfuscator": "^4.2.2"
+  }
+}

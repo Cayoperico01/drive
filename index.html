@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriveLine Manager - Gestion Mecano</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155'
+                        },
+                        brand: {
+                            pink: '#dd3bcc',
+                            blue: '#4bb4d3'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+        document.addEventListener('keydown', function(e){
+            if (e.key === 'F12') e.preventDefault();
+            if (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) e.preventDefault();
+            if (e.ctrlKey && e.key === 'U') e.preventDefault();
+        });
+    </script>
+    
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- PDF Tools -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    
+    <!-- Flatpickr (Date/Time Picker) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/fr.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        :root {
+            --brand-pink: #dd3bcc;
+            --brand-blue: #4bb4d3;
+            --brand-gradient: linear-gradient(90deg, rgba(221, 59, 204, 0.95), rgba(75, 180, 211, 0.95));
+            --brand-weak: rgba(75, 180, 211, 0.20);
+            --brand-strong: rgba(221, 59, 204, 0.25);
+            --surface-0: rgba(7, 11, 20, 0.92);
+            --surface-1: rgba(11, 17, 28, 0.82);
+            --surface-2: rgba(16, 24, 40, 0.78);
+            --border-0: rgba(148, 163, 184, 0.16);
+            --border-1: rgba(148, 163, 184, 0.22);
+        }
+
+        html, body { height: 100%; }
+
+        body {
+            background:
+                radial-gradient(900px 600px at 14% 8%, rgba(221, 59, 204, 0.16), transparent 55%),
+                radial-gradient(760px 520px at 88% 14%, rgba(75, 180, 211, 0.16), transparent 55%),
+                radial-gradient(900px 700px at 50% 120%, rgba(75, 180, 211, 0.10), transparent 55%),
+                linear-gradient(180deg, #060915 0%, #070b14 45%, #060915 100%);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 10px),
+                radial-gradient(800px 500px at 20% 0%, rgba(221, 59, 204, 0.08), transparent 60%),
+                radial-gradient(800px 500px at 80% 0%, rgba(75, 180, 211, 0.08), transparent 60%);
+            opacity: 0.35;
+        }
+
+        .glass { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+
+        .bg-slate-950 { background-color: rgba(4, 7, 14, 0.92) !important; }
+        .bg-slate-900 { background-color: var(--surface-0) !important; }
+        .bg-slate-800 { background-color: var(--surface-1) !important; }
+        .border-slate-800 { border-color: var(--border-0) !important; }
+        .border-slate-700 { border-color: var(--border-1) !important; }
+        .shadow-lg { box-shadow: 0 14px 45px rgba(2, 8, 23, 0.72), 0 0 0 1px rgba(255,255,255,0.03) !important; }
+        .text-slate-400 { color: #9fb0c7 !important; }
+        .text-slate-300 { color: #cfe0f6 !important; }
+
+        .bg-blue-600 { background: var(--brand-gradient) !important; }
+        .hover\:bg-blue-700:hover { filter: brightness(1.08); }
+        .hover\:bg-blue-500:hover { filter: brightness(1.06); }
+
+        .text-blue-300, .text-blue-400, .text-blue-500, .text-blue-600 { color: var(--brand-blue) !important; }
+        .border-blue-800, .border-blue-700, .border-blue-500 { border-color: rgba(75, 180, 211, 0.40) !important; }
+
+        .bg-blue-500\/5 { background-color: rgba(75, 180, 211, 0.05) !important; }
+        .bg-blue-500\/10 { background-color: rgba(75, 180, 211, 0.10) !important; }
+        .bg-blue-600\/20 { background-color: rgba(221, 59, 204, 0.14) !important; }
+        .bg-blue-900\/10 { background-color: rgba(75, 180, 211, 0.08) !important; }
+        .bg-blue-900\/20 { background-color: rgba(75, 180, 211, 0.10) !important; }
+        .bg-blue-900\/30 { background-color: rgba(75, 180, 211, 0.12) !important; }
+
+        .border-blue-500\/20 { border-color: rgba(75, 180, 211, 0.24) !important; }
+        .border-blue-500\/30 { border-color: rgba(75, 180, 211, 0.30) !important; }
+        .border-blue-700\/40 { border-color: rgba(75, 180, 211, 0.34) !important; }
+        .border-blue-900\/20 { border-color: rgba(75, 180, 211, 0.18) !important; }
+
+        .shadow-blue-600\/20 { --tw-shadow-color: rgba(75, 180, 211, 0.30) !important; }
+        .shadow-blue-900\/50 { --tw-shadow-color: rgba(221, 59, 204, 0.28) !important; }
+
+        .focus\:border-blue-500:focus { border-color: rgba(75, 180, 211, 0.90) !important; }
+        .focus-within\:border-blue-500:focus-within { border-color: rgba(75, 180, 211, 0.90) !important; }
+        .focus\:ring-blue-500\/20:focus { --tw-ring-color: rgba(75, 180, 211, 0.24) !important; }
+        .focus\:ring-blue-500:focus { --tw-ring-color: rgb(75 180 211 / var(--tw-ring-opacity)) !important; }
+        .focus-within\:ring-blue-500\/20:focus-within { --tw-ring-color: rgba(75, 180, 211, 0.24) !important; }
+        .focus-within\:ring-blue-500:focus-within { --tw-ring-color: rgb(75 180 211 / var(--tw-ring-opacity)) !important; }
+
+        .group:hover .group-hover\:text-blue-500 { color: var(--brand-blue) !important; }
+        .group:focus-within .group-focus-within\:text-blue-500 { color: var(--brand-blue) !important; }
+        .hover\:text-blue-300:hover, .hover\:text-blue-400:hover, .hover\:text-blue-500:hover { color: var(--brand-blue) !important; }
+
+        .has-sheen { position: relative; overflow: hidden; }
+
+        @keyframes toastShine {
+            0% { transform: translateX(-120%); }
+            100% { transform: translateX(120%); }
+        }
+
+        .login-page .has-sheen { box-shadow: 0 14px 26px rgba(2, 8, 23, 0.55), 0 0 0 1px rgba(255,255,255,0.06); }
+        .login-page .has-sheen::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 70%, transparent 100%);
+            pointer-events: none;
+            border-radius: inherit;
+            animation: toastShine 1700ms ease-in-out infinite;
+        }
+
+        input, textarea { caret-color: var(--brand-pink); }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-dark-900 transition-colors duration-300 text-gray-900 dark:text-gray-100">
+    <div id="app" class="h-screen flex flex-col">
+        <!-- App content will be injected here -->
+    </div>
+
+     <script type="module" src="./js/app.js?v=20"></script>
+ </body>
+ </html>

@@ -1,0 +1,2 @@
+ALTER TABLE public.sales 
+ADD COLUMN IF NOT EXISTS cost numeric DEFAULT 0;
